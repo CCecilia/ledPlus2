@@ -1,0 +1,5 @@
+django_secret_key = 'f-_k-o5+&x34=b)xh@w-fuk7=k4gz7l1&s2i&3mp*oj#^i=z80'
+database_name = 'ledplus-dev'
+database_username = 'ledplus'
+database_password = '12qwaszx'
+database_endpoint = 'ledplus.cinzr9o8ggmd.us-east-1.rds.amazonaws.com'

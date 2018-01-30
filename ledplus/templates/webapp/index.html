@@ -1,0 +1,86 @@
+{% extends "webapp/base.html" %}
+{% block content %}
+{% load staticfiles %}
+            <div class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div id="login-header" class="card-header" data-background-color="green">
+                                    <h4 class="title text-center"><login class="login-active">Log In</login> | <register>Register</register></h4>
+                                </div>
+                                <div id="login-error" class="card-header" data-background-color="red">
+                                    <h4 class="title text-center error-msg">Error</h4>
+                                </div>
+                                <div id="login-card" class="card-content">
+                                    <form name="login-form" method="POST" action="{% url 'webapp:login' %}">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="form-group label-floating">
+                                                    <label class="control-label">Username</label>
+                                                    <input name="username" type="text" class="form-control" required="true">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <div class="form-group label-floating">
+                                                    <label class="control-label">Password</label>
+                                                    <input name="password" type="password" class="form-control" required="true">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% csrf_token %}
+                                        <div class="row text-center">
+                                            <button type="submit" class="btn btn-primary" data-background-color="green">Log In</button>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div id="register-card" class="card-content">
+                                    <form name="register-form" method="POST" action="{% url 'webapp:register' %}">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <div class="form-group label-floating">
+                                                    <label class="control-label">Company</label>
+                                                    <input name="register-company" type="text" class="form-control" data-color="green" required="true">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group label-floating">
+                                                    <label class="control-label">Username</label>
+                                                    <input name="register-username" type="text" class="form-control" required="true">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group label-floating">
+                                                    <label class="control-label">Email address</label>
+                                                    <input name="register-email" type="email" class="form-control" required="true">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group label-floating">
+                                                    <label class="control-label">Password</label>
+                                                    <input name="register-password" type="password" class="form-control" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required="true">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group label-floating">
+                                                    <label class="control-label">Confirm Password</label>
+                                                    <input name="register-confirm-password" type="password" class="form-control" required="true">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% csrf_token %}
+                                        <div class="row text-center">
+                                            <button type="submit" class="btn btn-primary" data-background-color="green">Register</button>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock %}

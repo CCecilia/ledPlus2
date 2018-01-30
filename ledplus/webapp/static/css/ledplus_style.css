@@ -1,0 +1,39 @@
+/* Login Page */
+login, register{
+  cursor: pointer;
+}
+
+.login-active{
+  border-bottom: 2px solid #FFF;
+}
+
+#register-card, #login-error{
+  display: none;
+}
+
+.renewal-option{
+	width: 48%;
+	margin: 1%;
+	border: 2px solid #66bb6a;
+	cursor: pointer;
+}
+
+.renewal-option-selected, .renewal-option:hover{
+	color: #FFF;
+	background-color: #66bb6a;
+}
+
+.dropdown-label{
+	color: #a9afbb;
+	text-align: center;
+}
+
+.selectpicker{
+	width: 100%;
+}
+
+.weekday-input{
+	width: 10%; 
+	display: inline-block;
+	margin: 0 1%;
+}
