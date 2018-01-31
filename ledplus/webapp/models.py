@@ -1,5 +1,7 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import User
+from multiselectfield import MultiSelectField
 import uuid
 
 class Agent(models.Model):
@@ -11,7 +13,7 @@ class Agent(models.Model):
 
 
 class Subtype(models.Model):
-    name = models.CharField(max_length=254, blank=False, null=False)
+    name = models.CharField(max_length=254, blank=False, null=False, unique=True)
     sunday = models.IntegerField(default=0)
     monday = models.IntegerField(default=0)
     tuesday = models.IntegerField(default=0)
@@ -25,17 +27,99 @@ class Subtype(models.Model):
         return self.name
 
 
+class Led(models.Model):
+	COLORS = (
+		('5000K', '5000K'),
+		('2700K', '2700K')
+	)
+	LED_TYPE = (
+		('Tube', 'Tube'),
+		('U-BEND Tube', 'U-BEND Tube'),
+		('Lamp', 'Lamp'),
+		('Candelabra', 'Candelabra'),
+		('Spot', 'Spot'),
+		('Flood', 'Flood'),
+		('Track', 'Track'),
+		('4 pin', '4 pin'),
+		('Fixture', 'Fixture'),
+	)
+	BALLASTS = (
+		('Electronic', 'Electronic'),
+		('Magnetic', 'Magnetic')
+	)
+	BRANDS = (
+		('Philips', 'Philips'),
+		('Forest', 'Forest'),
+		('ELB', 'ELB'),
+		('Satco', 'Satco'),
+		('Sylvania', 'Sylvania'),
+		('n/a', 'n/a'),
+		('Way to Go', 'Way to Go'),
+		('Green Creative', 'Green Creative'),
+		('LED Plus', 'LED Plus')
+	)
+
+	name = models.CharField(max_length=254, blank=False, null=False)
+	type = models.CharField(max_length=20, choices=LED_TYPE, default='Tube')
+	ballast = models.CharField(max_length=20, choices=BALLASTS, default='Electronic')
+	net_cost = models.DecimalField(max_digits=6, decimal_places=2)
+	sale_price = models.DecimalField(max_digits=6, decimal_places=2)
+	non_led_price = models.DecimalField(max_digits=6, decimal_places=2)
+	image = models.ImageField(upload_to='media/led_images/')
+	wattage = models.IntegerField(default=0)
+	conventional_wattage = models.IntegerField(default=0)
+	order_number = models.IntegerField(default=0)
+	active = models.BooleanField(default=False)
+	zero_to_fifty = models.CharField(max_length=254, default="0.00")
+	fifty_one_to_two_hundred = models.CharField(max_length=254, default="0.00")
+	two_hundred_one_to_five_hundred = models.CharField(max_length=254, default="0.00")
+	five_hundred_to_one_thousand = models.CharField(max_length=254, default="0.00")
+	min_visit_cost = models.CharField(max_length=254, default="0.00")
+	premium_ceiling_multiplier = models.CharField(max_length=254, default="0.00")
+	brands = MultiSelectField(choices=BRANDS, default='Philips')
+	colors = MultiSelectField(choices=COLORS, default='5000K')
+	lumens = models.CharField(max_length=254, blank=True, null=True)
+	rated_average_life = models.CharField(max_length=254, blank=True, null=True)
+
+	def __str__(self):
+		return str(self.name)
+
+
+class SaleLed(models.Model):
+	CEILING_HEIGHTS = (
+		(1, 'Over 16`'),
+		(2, '12` to 16`'),
+		(3, 'Up to 12`')
+	)
+	led = models.ForeignKey('Led', on_delete=models.PROTECT)
+	color = models.CharField(max_length=254, blank=False, null=False)
+	led_count = models.IntegerField(default=0)
+	total_count = models.IntegerField(default=0)
+	not_replacing_count = models.IntegerField(default=0)
+	delamping_count = models.IntegerField(default=0)
+	wattage_reduction = models.DecimalField(max_digits=16, decimal_places=8, default=0)
+	installation_required = models.BooleanField(default=True)
+	ceiling_height = models.CharField(max_length=1, choices=CEILING_HEIGHTS, default=2)
+	recycling = models.BooleanField(default=False)
+
+	def __str__(self):
+		return str(self.id)
+
+
 class Sale(models.Model):
-    uid = models.UUIDField(default=uuid.uuid4,editable=False,unique=True)
+    uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    agent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=False, null=False)
     date_created = models.DateTimeField(auto_now_add=True)
     renewal = models.BooleanField(default=False)
-    customer_name = models.CharField(max_length=255,blank=True,null=True)
-    customer_authorized_representative = models.CharField(max_length=255,blank=True,null=True)
-    service_address = models.CharField(max_length=255,blank=True,null=True)
-    service_city = models.CharField(max_length=255,blank=True,null=True)
-    service_state = models.CharField(max_length=255,blank=True,null=True)
-    service_zip_code = models.CharField(max_length=255,blank=True,null=True)
-    customer_subtype = models.CharField(max_length=255,blank=True,null=True)
+    business_name = models.CharField(max_length=100, blank=True, null=True)
+    authorized_representative = models.CharField(max_length=100, blank=True, null=True)
+    service_address = models.CharField(max_length=255, blank=True, null=True)
+    service_city = models.CharField(max_length=255, blank=True, null=True)
+    service_state = models.CharField(max_length=2, blank=True, null=True)
+    service_zip_code = models.CharField(max_length=255, blank=True, null=True)
+    subtype = models.ForeignKey(Subtype, on_delete=models.PROTECT, null=True)
+    annual_hours_of_operation = models.IntegerField(default=0)
+    leds = models.ManyToManyField('SaleLed')
     # customer_phone_number = models.CharField(max_length=255,blank=True,null=True)
     # billing_address = models.CharField(max_length=255,blank=True,null=True)
     # billing_city = models.CharField(max_length=255,blank=True,null=True)
@@ -123,5 +207,33 @@ class Sale(models.Model):
     # ledplus_adder = models.CharField(max_length=254,blank=True,null=True)
     # energy_only_sale = models.BooleanField(default=False)
 
-    def __str__(self):
-        return self.id
+    # def __str__(self):
+    #     return self.business_name
+
+
+class Zone(models.Model):
+	zip_code = models.CharField(max_length=5, blank=False, null=False)
+	name = models.CharField(max_length=254, blank=False, null=False)
+
+	def __str__(self):
+		return str(self.name)
+
+
+class Utility(models.Model):
+	name = models.CharField(max_length=254, blank=False, null=False)
+	state = models.CharField(max_length=2, blank=False, null=False)
+	account_digits = models.IntegerField(default=12)
+	active = models.BooleanField(default=True)
+	zone_lookup = models.BooleanField(default=False)
+	zones = models.ManyToManyField('Zone', blank=True)
+
+	def __str__(self):
+		return str(self.name)
+
+
+class ServiceClass(models.Model):
+	name = models.CharField(max_length=254, blank=False, null=False)
+	active = models.BooleanField(default=False)
+
+	def __str__(self):
+		return str(self.name)

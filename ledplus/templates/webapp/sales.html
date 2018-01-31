@@ -1,0 +1,38 @@
+{% extends "webapp/base.html" %}
+{% block content %}
+{% load staticfiles %}
+            <div class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header" data-background-color="green">
+                                    <h4 class="title">Sales</h4>
+                                    <p class="category">Here is a subtitle for this table</p>
+                                </div>
+                                <div class="card-content table-responsive">
+                                    <table id="sales-table" class="table">
+                                        <thead>
+                                            <th>ID</th>
+                                            <th>Business Name</th>
+                                            <th>Subtype</th>
+                                            <th>Renewal</th>
+                                        </thead>
+                                        <tbody>
+                                            {% for sale in sales %}
+                                                <tr>
+                                                    <td>{{ sale.id }}</td>
+                                                    <td>{{ sale.business_name|title }}</td>
+                                                    <td>{{ sale.subtype.name }}</td>
+                                                    <td>{% if sale.renewal %}Yes{% else %}No{% endif %}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+{% endblock %}

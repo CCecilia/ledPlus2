@@ -5,18 +5,20 @@
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="card">
+                            <!-- Customer Info Section -->
+                            <div id="customer-info-card" class="card">
                                 <div class="card-header" data-background-color="green">
                                     <h4 class="title">New Sale</h4>
                                     <p class="category">Customer Information</p>
                                 </div>
                                 <div class="card-content">
                                     <form name="new-sale-customer-info">
+                                        {% csrf_token %}
                                         <div class="row">
-                                            <div class="col-md-6 text-center renewal-option" data-type="renewal">
+                                            <div class="col-sm-12 col-md-6 text-center renewal-option" data-type="renewal">
                                                 Renewal
                                             </div>
-                                            <div class="col-md-6 text-center renewal-option" data-type="new_customer">
+                                            <div class="col-sm-12 col-md-6 text-center renewal-option" data-type="new_customer">
                                                 New Customer
                                             </div>
                                         </div>
@@ -52,13 +54,13 @@
                                             <div class="col-md-4">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">State</label>
-                                                    <input name="service-state" type="text" class="form-control" required="true">
+                                                    <input name="service-state" type="text" class="form-control" maxlength="2" title="Example. NY" required="true">
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">Postal Code</label>
-                                                    <input name="service-zip-code" type="text" class="form-control" required="true">
+                                                    <input name="service-zip-code" type="number" pattern="(\d{5}([\-]\d{4})?)" title="Example 08010 or 08010-1004" class="form-control" required="true">
                                                 </div>
                                             </div>
                                         </div>
@@ -66,8 +68,8 @@
                                             <div class="col-md-3">
                                                 <div class="form-group label-floating">
                                                     <h4 class="dropdown-label">Subtype</h4>
-                                                    <select id="subtype-dropdown" class="selectpicker" data-style="btn-success" data-width="100%" required>
-                                                        <option value=""><span style="color:#FFF;">Select Subtype</span></option>
+                                                    <select id="subtype-dropdown" class="selectpicker show-tick" data-style="btn-success" data-width="100%" required style="color: #FFF;">
+                                                        <option value="" data-content="<span style='color: #FFF;'>Select Subtype</span>"></option>
                                                         {% for subtype in subtypes %}
                                                             <option value="{{ subtype.id }}" data='{"monday": "{{ subtype.monday }}", "tuesday": "{{ subtype.tuesday }}", "wednesday": "{{ subtype.wednesday }}", "thursday": "{{ subtype.thursday }}", "friday": "{{ subtype.friday }}", "saturday": "{{ subtype.saturday }}", "sunday": "{{ subtype.sunday }}", "total": "{{ subtype.total_hours_of_operation }}" }'>{{ subtype.name|title }}</option>
                                                         {% endfor %}
@@ -113,6 +115,265 @@
                                         <button type="submit" class="btn btn-primary pull-right"  data-background-color="green">Next</button>
                                         <div class="clearfix"></div>
                                     </form>
+                                </div>
+                            </div>
+
+                            <!-- LED Selection section -->
+                            <div id="led-selection-card" class="card ">
+                                <div class="card-header led-header" data-background-color="green">
+                                    <h4 class="title">New Sale</h4>
+                                    <p class="category">LED Selection</p>
+                                </div>
+                                <div class="card-header led-trash" data-background-color="red" ondrop="trashLED(event)" ondragover="allowDrop(event)">
+                                    <h2 class="title text-center"><i class="material-icons">delete</i></h2>
+                                </div>
+                                <div class="card-content">
+                                    <div class="col-md-6">
+                                        <h2 class="text-center">LEDs</h2>
+                                        {% for led in leds %}
+                                            <div class="row led-option" data-id="{{ led.id }}" id="{{ led.id }}" ondragstart="toggleTrash(event)" ondragend="toggleTrash(event)">
+                                                <div class="col-sm-3 col-md-3">
+                                                    <img src="{{ led.image.url }}" width="100%" height="auto"/>
+                                                </div>
+                                                <div class="col-sm-6 col-md-6">
+                                                    {{ led.name }}
+                                                </div>
+                                                <div class="col-sm-3 col-md-3">
+                                                    {{ led.name }}
+                                                </div>
+                                            </div>
+                                            <div class="row led-counts" data-id="{{ led.id }}">
+                                                <form name="led-to-sale-form"  data-id="{{ led.id }}">
+                                                    <div class="col-md-9">
+                                                        <div class="led-count input-group text-center">
+                                                            <label>Total</label>
+                                                            <input type="number" class="form-control" name="led-total" placeholder="0" data-id="{{ led.id }}" required="true">
+                                                        </div>
+                                                        
+                                                        <div class="led-count input-group text-center">
+                                                            <label>LEDs</label>
+                                                            <input type="number" class="form-control" name="led-count" placeholder="0"data-id="{{ led.id }}" required="true">
+                                                        </div>
+                                                        
+                                                        <div class="led-count input-group text-center">
+                                                            <label>Delamping</label>
+                                                            <input type="number" class="form-control" name="led-delamping" placeholder="0"data-id="{{ led.id }}">
+                                                        </div>
+                                                        
+                                                        <div class="led-count input-group text-center">
+                                                            <label>Not Replacing</label>
+                                                            <input type="number" class="form-control" name="led-not-replacing" placeholder="0" data-id="{{ led.id }}" disabled="true">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group label-floating">
+                                                            <h4 class="dropdown-label">Colors</h4>
+                                                            <select class="selectpicker led-color" data-style="btn-success" data-width="100%" data-id="{{ led.id }}">
+                                                                <option value="5000k" selected><span style="color:#FFF;">Color</span></option>
+                                                                {% for color in led.colors %}
+                                                                    <option value="{{ color }}">{{ color }}</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="input-group text-center">
+                                                            <label>Installation</label><br>
+                                                            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                                                <label class="btn btn-secondary led-installation active" data-id="{{ led.id }}" data-type="true">
+                                                                    <input type="radio" name="led-installation"checked> Yes
+                                                                </label>
+                                                                <label class="btn btn-secondary led-installation" data-id="{{ led.id }}" data-type="false">
+                                                                    <input type="radio" name="led-installation"> No
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group label-floating">
+                                                            <select class="selectpicker show-tick ceiling-height-dropdown" data-style="btn-success" data-width="100%" data-id="{{ led.id }}">
+                                                                <option value="2" selected><span style="color:#FFF;">Ceiling Height</span></option>
+                                                                <option value="1"><span style="color:#FFF;">Over 16`</span></option>
+                                                                <option value="2"><span style="color:#FFF;">12` to 16`</span></option>
+                                                                <option value="3"><span style="color:#FFF;">Up to 12`</span></option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12 text-center">
+                                                        <button class="btn btn-success">Add to Sale</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h2 class="text-center">Selected</h2>
+                                        <!-- <p class="category">drag to remove LEDs</p> -->
+                                        <div id="selected-leds"></div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <form name="new-sale-leds">
+                                            {% csrf_token %}
+                                            
+                                            <button class="btn btn-primary pull-left led-selection-back"  data-background-color="yellow">Back</button>
+                                            <button type="submit" class="btn btn-primary pull-right"  data-background-color="green">Next</button>
+                                            <div class="clearfix"></div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bill Info Section -->
+                            <div id="bill-info-card" class="card">
+                                <div class="card-header" data-background-color="green">
+                                    <h4 class="title">New Sale</h4>
+                                    <p class="category">Bill Information</p>
+                                </div>
+                                <div class="card-content">
+                                    <div class="col-md-12">
+                                        <form name="bill-info-form">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" value="" id="billing-service-address-same" checked>
+                                                <label class="form-check-label" for="billing-service-address-same">
+                                                    Billing Address Same As Service Address
+                                                </label>
+                                            </div>
+                                            <div id="billing-address" class="row">
+                                                <div class="col-md-12">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">Adress</label>
+                                                        <input name="billing-address" type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">City</label>
+                                                        <input name="billing-city" type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">State</label>
+                                                        <input name="billing-state" type="text"  maxlength="2" title="Example. NY" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">Postal Code</label>
+                                                        <input name="billing-zip-code" type="number" pattern="(\d{5}([\-]\d{4})?)" title="Example 08010 or 08010-1004" class="form-control">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-6 col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <select id="utility-dropdown" class="selectpicker" data-live-search="true" data-style="btn-success" data-width="100%" data-id="{{ led.id }}" require="true">
+                                                            <option value="" data-content="<span style='color: #FFF;'>Utility</span>"></option>
+                                                            {% for utility in utilities %}
+                                                                <option value="{{ utility.id }}" data='{"account_length": {{ utility.account_digits}} }'>{{ utility.name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6 col-md-4">
+                                                    <div class="form-group">
+                                                        <select id="service-class-dropdown" class="selectpicker show-tick" data-live-search="true" data-style="btn-success" data-width="100%" require="true">
+                                                            <option value="" data-content="<span style='color: #FFF;'>Service Class</span>"></option>
+                                                            {% for service_class in service_classes %}
+                                                                <option value="{{ service_class.id }}">{{ service_class.name }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">Account Number</label>
+                                                        <input name="account-number" type="text" class="form-control" required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <h3 class="text-center">Usage</h3>
+                                                <div class="col-sm-12 col-md-6 text-center usage-option" data-type="monthly">
+                                                    Monthly
+                                                </div>
+                                                <div class="col-sm-12 col-md-6 text-center usage-option" data-type="yearly">
+                                                    Yearly
+                                                </div>
+                                            </div>
+                                            <div id="monthly-usage" class="row">
+                                                <div class="col-sm-12 col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">kWh</label>
+                                                        <input name="monthly-kwh" type="number" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">Supply Charges</label>
+                                                        <input class="form-control" name="monthly-supply-charges" type="number" min="0.00" max="1000000.00" step="0.01" title="needs to be in 100.00 format"/>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-4">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">Delivery Charges</label>
+                                                        <input class="form-control" name="monthly-delivery-charges" type="number" min="0.00" max="1000000.00" step="0.01" title="needs to be in 100.00 format"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="yearly-usage" class="row">
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">kWh</label>
+                                                        <input name="yearly-kwh" type="number" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group label-floating">
+                                                        <label class="control-label">Supply Rate</label>
+                                                        <input class="form-control" name="yearly-supply-rate" type="number" min="0.0000" max="0.0000" step="0.0001" title="needs to be in 0.0000 format"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <select id="month-of-bill-dropdown" class="selectpicker" data-style="btn-success" require="true" data-width="100%">
+                                                            <option value="" data-content="<span style='color: #FFF;'>Month Of Bill</span>"></option>
+                                                            <option value="01">January</option>
+                                                            <option value="02">February</option>
+                                                            <option value="03">March</option>
+                                                            <option value="04">April</option>
+                                                            <option value="05">May</option>
+                                                            <option value="06">June</option>
+                                                            <option value="07">July</option>
+                                                            <option value="08">August</option>
+                                                            <option value="09">September</option>
+                                                            <option value="10">October</option>
+                                                            <option value="11">November</option>
+                                                            <option value="12">December</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="btn btn-default btn-file btn-success bill-image-uplaod-btn">
+                                                            Add Bill Image <input id="bill-image" type="file" accept="image/*;capture=camera" style="display: none;">
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div> 
+                                            <div class="col-sm-12 text-center">
+                                                <div class="form-group">
+                                                    <h3>Service Start Date</h3>
+                                                    <input class="text-date-input" type="text" name="service-start-date" autocomplete="off" autocomplete="new-password" placeholder="click to add date" title="Pleaase the date in which the customer wants service to start." required>
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-primary pull-left bill-info-back"  data-background-color="yellow">Back</button>
+                                            <button type="submit" class="btn btn-primary pull-right"  data-background-color="green">Next</button>
+                                            <div class="clearfix"></div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>

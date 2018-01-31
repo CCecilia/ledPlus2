@@ -1,2 +1,4 @@
 Django==2.0.1
+django-multiselectfield==0.1.8
+Pillow==5.0.0
 pytz==2017.3

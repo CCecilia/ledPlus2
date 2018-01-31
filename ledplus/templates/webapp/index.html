@@ -9,7 +9,7 @@
                                 <div id="login-header" class="card-header" data-background-color="green">
                                     <h4 class="title text-center"><login class="login-active">Log In</login> | <register>Register</register></h4>
                                 </div>
-                                <div id="login-error" class="card-header" data-background-color="red">
+                                <div id="login-error" class="card-header hidden" data-background-color="red">
                                     <h4 class="title text-center error-msg">Error</h4>
                                 </div>
                                 <div id="login-card" class="card-content">
@@ -35,7 +35,7 @@
                                         </div>
                                     </form>
                                 </div>
-                                <div id="register-card" class="card-content">
+                                <div id="register-card" class="card-content hidden">
                                     <form name="register-form" method="POST" action="{% url 'webapp:register' %}">
                                         <div class="row">
                                             <div class="col-md-5">

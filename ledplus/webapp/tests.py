@@ -3,7 +3,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 import json
 
-from .models import Agent
+from .models import Agent, Sale
 
 c = Client()
 
@@ -24,6 +24,11 @@ class RenderingTests(TestCase):
 			company='Test Co'
 		)
 
+		for i in range(5):
+			Sale.objects.create(
+				agent=user
+			)
+
 	def index_view(self):
 		response = self.c.get(reverse('webapp:index'))
 		# check reponse and template
@@ -37,6 +42,7 @@ class RenderingTests(TestCase):
 		response = self.c.get(reverse('webapp:dashboard'))
 		# check reponse and template
 		self.assertEqual(response.status_code, 200)
+		self.assertTrue(len(response.context['sales']) == 5)
 		self.assertTemplateUsed(response, 'webapp/dashboard.html')
 
 	def dashboard_view_redirect(self):
@@ -53,8 +59,13 @@ class RenderingTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertTemplateUsed(response, 'webapp/newSale.html')
 
+	def newsale_view_redirect(self):
+		response = self.c.get(reverse('webapp:newSale'))
+		# check reponse and template
+		self.assertEqual(response.status_code, 302)
 
-class AjaxViewsTests(TestCase):
+
+class UserViewsTests(TestCase):
 	c = Client()
 
 	@classmethod
@@ -129,3 +140,45 @@ class AjaxViewsTests(TestCase):
 			'password': 'password'
 		})
 		self.assertEqual(response.status_code, 200)
+
+
+class SaleViewsTests(TestCase):
+	c = Client()
+
+	@classmethod
+	def setUpTestData(cls):
+		user = User.objects.create(
+			username='testuser',
+			email='testuser@email.com',
+			password='password'
+		)
+
+		Agent.objects.create(
+			user=user,
+			company='Test Co'
+		)
+
+		Sale.objects.create(
+			agent=user
+		)
+
+	def test_create_sale(self):
+		response = self.c.post(
+			reverse('webapp:updateSale'), 
+			json.dumps({
+				'renewal': '0',
+				'business_name': 'test co',
+				'auth_rep': 'test testy',
+				'service_address': '111 test ave',
+				'service_state': 'NY',
+				'service_city': 'test city',
+				'service_zip_code': '10001',
+				'subtype': '1',
+				'annual_hours_of_operation': '2000'
+			}),
+			'json',
+			HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+		)
+		self.assertEqual(Sale.objects.all().count(), 2)
+
+

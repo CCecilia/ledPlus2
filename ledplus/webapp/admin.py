@@ -2,7 +2,7 @@ from django.contrib import admin
 # from django.contrib.auth.admin import UserAdmin
 # from django.contrib.auth.models import User
 
-from .models import Agent, Subtype
+from .models import *
 
 # class AgentInline(admin.StackedInline):
 #     model = Agent
@@ -18,4 +18,10 @@ from .models import Agent, Subtype
 # admin.site.register(Agent, UserAdmin)
 admin.site.register(Subtype)
 admin.site.register(Agent)
+admin.site.register(Sale)
+admin.site.register(Led)
+admin.site.register(SaleLed)
+admin.site.register(Utility)
+admin.site.register(Zone)
+admin.site.register(ServiceClass)
 # admin.site.register(UserAdmin)
