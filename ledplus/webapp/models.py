@@ -4,12 +4,54 @@ from django.contrib.auth.models import User
 from multiselectfield import MultiSelectField
 import uuid
 
-class Agent(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    company = models.CharField(max_length=100)
+
+class RetailEnergyProvider(models.Model):
+    name = models.CharField(max_length=254, blank=True, null=True, unique=True)
+    image = models.ImageField(upload_to='rep_logos/')
+    teams = models.ManyToManyField('Team', blank=True)
+    rate_upload = models.FileField(upload_to='rates/')
 
     def __str__(self):
-        return self.user.email
+        return self.name
+ 
+
+class Team(models.Model):
+    name = models.CharField(max_length=254, blank=False, null=False)
+    agents = models.ManyToManyField('Agent', blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Agent(models.Model):
+	user = models.OneToOneField(User, on_delete=models.CASCADE)
+	retail_energy_provider = models.ForeignKey('RetailEnergyProvider', on_delete=models.CASCADE, blank=False, null=False)
+
+	def __str__(self):
+		return self.user.email
+
+
+# class Rate(models.Model):
+# 	utility = models.ForeignKey('Utility', blank=False, on_delete=models.CASCADE)
+# 	state = models.CharField(max_length=2, blank=False, null=False)
+# 	retail_energy_provider = models.ForeignKey('RetailEnergyProvider', blank=False, on_delete=models.CASCADE)
+# 	team = models.ForeignKey('Team', blank=False, on_delete=models.CASCADE)
+# 	rate = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
+# 	zone = models.ForeignKey('Zone', blank=False, on_delete=models.CASCADE)
+# 	service_class = models.ForeignKey('ServiceClass', blank=False, on_delete=models.CASCADE)
+# 	start_date = models.DateField(blank=False)
+# 	end_date = models.DateField(blank=False)
+# 	annual_usage_min = models.IntegerField(default=0)
+# 	annual_usage_max = models.IntegerField(default=100000)
+# 	sales_tax = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
+# 	marketing_adder = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
+# 	logistics_adder = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
+# 	energy_only_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0)
+# 	term = models.IntegerField(default=24)
+# 	max_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0.05)
+
+# 	def __str__(self):
+# 		return self.id
 
 
 class Subtype(models.Model):
@@ -65,7 +107,7 @@ class Led(models.Model):
 	net_cost = models.DecimalField(max_digits=6, decimal_places=2)
 	sale_price = models.DecimalField(max_digits=6, decimal_places=2)
 	non_led_price = models.DecimalField(max_digits=6, decimal_places=2)
-	image = models.ImageField(upload_to='media/led_images/')
+	image = models.ImageField(upload_to='led_images/')
 	wattage = models.IntegerField(default=0)
 	conventional_wattage = models.IntegerField(default=0)
 	order_number = models.IntegerField(default=0)
@@ -99,7 +141,7 @@ class SaleLed(models.Model):
 	delamping_count = models.IntegerField(default=0)
 	wattage_reduction = models.DecimalField(max_digits=16, decimal_places=8, default=0)
 	installation_required = models.BooleanField(default=True)
-	ceiling_height = models.CharField(max_length=1, choices=CEILING_HEIGHTS, default=2)
+	ceiling_height = models.IntegerField(choices=CEILING_HEIGHTS, default=2)
 	recycling = models.BooleanField(default=False)
 
 	def __str__(self):
@@ -107,31 +149,45 @@ class SaleLed(models.Model):
 
 
 class Sale(models.Model):
-    uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    agent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=False, null=False)
-    date_created = models.DateTimeField(auto_now_add=True)
-    renewal = models.BooleanField(default=False)
-    business_name = models.CharField(max_length=100, blank=True, null=True)
-    authorized_representative = models.CharField(max_length=100, blank=True, null=True)
-    service_address = models.CharField(max_length=255, blank=True, null=True)
-    service_city = models.CharField(max_length=255, blank=True, null=True)
-    service_state = models.CharField(max_length=2, blank=True, null=True)
-    service_zip_code = models.CharField(max_length=255, blank=True, null=True)
-    subtype = models.ForeignKey(Subtype, on_delete=models.PROTECT, null=True)
-    annual_hours_of_operation = models.IntegerField(default=0)
-    leds = models.ManyToManyField('SaleLed')
+	BILL_TYPE = (
+		('monthly', 'monthly'),
+		('yearly', 'yearly')
+	)
+	uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, verbose_name='Unique Identifier')
+	agent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=False, null=False)
+	date_created = models.DateTimeField(auto_now_add=True)
+	renewal = models.BooleanField(default=False)
+	business_name = models.CharField(max_length=100, blank=True, null=True)
+	authorized_representative = models.CharField(max_length=100, blank=True, null=True)
+	service_address = models.CharField(max_length=255, blank=True, null=True)
+	service_city = models.CharField(max_length=255, blank=True, null=True)
+	service_state = models.CharField(max_length=2, blank=True, null=True)
+	service_zip_code = models.CharField(max_length=10, blank=True, null=True)
+	subtype = models.ForeignKey(Subtype, on_delete=models.PROTECT, null=True)
+	annual_hours_of_operation = models.IntegerField(default=0)
+	leds = models.ManyToManyField('SaleLed')
+	billing_address = models.CharField(max_length=255, blank=True, null=True)
+	billing_city = models.CharField(max_length=255, blank=True, null=True)
+	billing_state = models.CharField(max_length=2, blank=True, null=True)
+	billing_zip_code = models.CharField(max_length=10, blank=True, null=True)
+	utility = models.ForeignKey('Utility', on_delete=models.PROTECT, null=True)
+	zone = models.ForeignKey('Zone', on_delete=models.PROTECT, null=True)
+	service_class = models.ForeignKey('ServiceClass', on_delete=models.PROTECT, null=True)
+	utility_account_number = models.CharField(max_length=255, blank=True, null=True, unique=True)
+	bill_type = models.CharField(max_length=7, choices=BILL_TYPE, default='monthly')
+	month_of_bill = models.CharField(max_length=2, blank=True, null=True)
+	service_start_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
+	bill_image = models.ImageField(upload_to='bill_images/', blank=True)
+	kwh = models.IntegerField(default=0, verbose_name='kWh')
+	supply_charges = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	delivery_charges = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	base_rate = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
+	# weight = models.DecimalField(max_digits=6, decimal_places=5, default=None)
     # customer_phone_number = models.CharField(max_length=255,blank=True,null=True)
-    # billing_address = models.CharField(max_length=255,blank=True,null=True)
-    # billing_city = models.CharField(max_length=255,blank=True,null=True)
-    # billing_state = models.CharField(max_length=255,blank=True,null=True)
-    # billing_zip_code = models.CharField(max_length=255,blank=True,null=True)
     # customer_email_address = models.CharField(max_length=255,blank=True,null=True)
     # times_bulbs_changed_yearly = models.CharField(max_length=255,blank=True,null=True)
     # annual_hours_of_operation = models.CharField(max_length=255,blank=True,null=True)
-    # utility = models.CharField(max_length=255,blank=True,null=True)
     # service_class = models.CharField(max_length=255,blank=True,null=True)
-    # utility_account_number = models.CharField(max_length=255,blank=True,null=True)
-    # month_of_bill_used = models.CharField(max_length=255,blank=True,null=True)
     # yearly_kwh = models.CharField(max_length=255,blank=True,null=True)
     # monthly_kwh = models.CharField(max_length=255,blank=True,null=True)
     # supply_charges = models.CharField(max_length=255,blank=True,null=True)
@@ -237,3 +293,4 @@ class ServiceClass(models.Model):
 
 	def __str__(self):
 		return str(self.name)
+

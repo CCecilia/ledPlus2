@@ -1,28 +1,34 @@
 let sale = {
-    leds: []
+    customer_info: {},
+    leds: [],
+    bill_info: {}
 };
+
 
 function isValidEmailAddress(emailAddress) {
     let pattern = /^([a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+(\.[a-z\d!#$%&'*+\-\/=?^_`{|}~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)*|"((([ \t]*\r\n)?[ \t]+)?([\x01-\x08\x0b\x0c\x0e-\x1f\x7f\x21\x23-\x5b\x5d-\x7e\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|\\[\x01-\x09\x0b\x0c\x0d-\x7f\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))*(([ \t]*\r\n)?[ \t]+)?")@(([a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\d\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.)+([a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]|[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF][a-z\d\-._~\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]*[a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])\.?$/i;
     return pattern.test(emailAddress);
 }
 
+
 function updateSale(sale_data) {
-    $.ajaxSetup({
-        headers: {
-            "X-CSRFToken": $("input[name='csrfmiddlewaretoken']").val()
-        }
-    });
-    $.ajax({
-        type: "POST",
-        url: "/sale/update/",
-        data: JSON.stringify(sale_data), 
-        success: function(data){
-            return data;
-        },
-        fail: function(data){
-            alert('unknown error occurred');
-        }
+    return new Promise(function(resolve, reject){
+        $.ajaxSetup({
+            headers: {
+                "X-CSRFToken": $("input[name='csrfmiddlewaretoken']").val()
+            }
+        });
+        $.ajax({
+            type: "POST",
+            url: "/sale/update/",
+            data: JSON.stringify(sale_data), 
+            success: function(data){
+                resolve(data);
+            },
+            fail: function(data){
+                reject( error);
+            }
+        });
     });
 }
 
@@ -45,11 +51,13 @@ function trashLED(event) {
     }
 }
 
+
 // drag and drop: remove LED
 function toggleTrash(event){
     event.dataTransfer.setData("led_id", event.target.id);
     $('.led-header, .led-trash').toggle();
 }
+
 
 $(document).on('change', ':file', function() {
     var input = $(this),
@@ -57,6 +65,7 @@ $(document).on('change', ':file', function() {
         label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
     input.trigger('fileselect', [numFiles, label]);
 });
+
 
 $(document).ready(function(){
     $.ajaxSetup({
@@ -146,7 +155,13 @@ $(document).ready(function(){
                     }
                 },
                 fail: function(data){
-                    alert('unknown error occurred');
+                    $.notify({
+                        // options
+                        message: 'Unknown error occured' 
+                    },{
+                        // settings
+                        type: 'danger'
+                    });
                 }
             });
         }
@@ -191,7 +206,13 @@ $(document).ready(function(){
                     }
                 },
                 fail: function(data){
-                    alert('unknown error occurred');
+                    $.notify({
+                        // options
+                        message: 'Unknown error occured' 
+                    },{
+                        // settings
+                        type: 'danger'
+                    });
                 }
             });
         }
@@ -207,9 +228,9 @@ $(document).ready(function(){
 
         // set sale value
         if( $(this).attr('data-type') == 'renewal' ){
-            sale.renewal = true;
+            sale.customer_info.renewal = true;
         }else{
-            sale.renewal = false;
+            sale.customer_info.renewal = false;
         }
     });
 
@@ -220,10 +241,10 @@ $(document).ready(function(){
         let subtype = $("#subtype-dropdown option:selected").val();
         
         if( !subtype ){
-            sale.subtype = null;
+            sale.customer_info.subtype = null;
             return;
         }else{
-            sale.subtype = subtype;
+            sale.customer_info.subtype = subtype;
         }
 
         let hours_of_operation = JSON.parse($("#subtype-dropdown option:selected").attr('data'));
@@ -236,6 +257,7 @@ $(document).ready(function(){
         $("input[name='saturday']").val(hours_of_operation.saturday);
         $("input[name='sunday']").val(hours_of_operation.sunday);
         $("input[name='total']").val(hours_of_operation.total);
+        console.log(sale);
     });
 
 
@@ -260,42 +282,74 @@ $(document).ready(function(){
         //Stop html form submission
         event.preventDefault();
 
-        // check renewal/subtype selected
-        if( !sale.renewal ){
-            $(".renewal-option").attr("tabindex",-1).focus().css("border-color", "red");
-            setTimeout(function(){
-                $(".renewal-option").css("border-color", "");
-            },2000);
+        // check renewal selected
+        if( sale.customer_info.renewal != true && sale.customer_info.renewal != false ){
+            $.notify({
+                // options
+                message: 'Please choose renewal or new customer.' 
+            },{
+                // settings
+                type: 'danger'
+            });
+            $(".renewal-option").attr("tabindex",-1).focus();
+            return;
         }
 
-        // check for blanks
-        let require_fields = [
-            $("input[name='business-name']"),
-            $("input[name='auth-rep']"),
-            $("input[name='service-address']"),
-            $("input[name='service-city']"),
-            $("input[name='service-state']"),
-            $("input[name='service-zip-code']"),
-            $("input[name='total']")
-        ]; 
-
-        for( field in require_fields ){
-            if( !$(field).val() ){
-                $(field).focus();
-            }
+        // check subtype
+        if( isNaN(sale.customer_info.subtype) ){
+            $.notify({
+                // options
+                message: 'Please choose a subtype.' 
+            },{
+                // settings
+                type: 'danger'
+            });
+            $("#subtype-dropdown").attr("tabindex",-1).focus();
+            return;
         }
+
 
         // update sale obj
-        sale.business_name = require_fields[0].val();
-        sale.auth_rep = require_fields[1].val();
-        sale.service_address = require_fields[2].val();
-        sale.service_city = require_fields[3].val();
-        sale.service_state = require_fields[4].val();
-        sale.service_zip_code = require_fields[5].val();
-        sale.annual_hours_of_operation = require_fields[6].val();
+        sale.customer_info.business_name = $("input[name='business-name']").val();
+        sale.customer_info.auth_rep = $("input[name='auth-rep']").val();
+        sale.customer_info.service_address = $("input[name='service-address']").val();
+        sale.customer_info.service_city = $("input[name='service-city']").val();
+        sale.customer_info.service_state = $("input[name='service-state']").val();
+        sale.customer_info.service_zip_code = $("input[name='service-zip-code']").val();
+        sale.customer_info.annual_hours_of_operation = $("input[name='total']").val();
 
         // UpdateSale
-        updateSale(sale);
+        updateSale(sale).then(function(data){
+            if( data.status === 'success'){
+                $.notify({
+                    // options
+                    message: 'Sale data saved.' 
+                },{
+                    // settings
+                    type: 'success',
+                    delay: 3000,
+                });
+                sale.id = data.sale_id;
+                return data;
+            }else{
+                $.notify({
+                    // options
+                    message: data.error_msg 
+                },{
+                    // settings
+                    type: 'danger'
+                });
+                return;
+            }
+        }, function(error){
+            $.notify({
+                // options
+                message: 'Unknown error occured' 
+            },{
+                // settings
+                type: 'danger',
+            });
+        });
 
         // toggle cards
         $("#customer-info-card, #led-selection-card").toggle();
@@ -375,7 +429,45 @@ $(document).ready(function(){
 
         console.log(sale);
         if( sale.leds.length > 0 ){
-            updateSale(sale);
+            updateSale(sale).then(function(data){
+                if( data.status === 'success'){
+                    $.notify({
+                        // options
+                        message: 'Sale data saved.' 
+                    },{
+                        // settings
+                        type: 'success',
+                        delay: 3000,
+                    });
+                    sale.id = data.sale_id;
+                    return data;
+                }else{
+                    $.notify({
+                        // options
+                        message: data.error_msg 
+                    },{
+                        // settings
+                        type: 'danger'
+                    });
+                    return;
+                }
+            }, function(error){
+                $.notify({
+                    // options
+                    message: 'Unknown error occured' 
+                },{
+                    // settings
+                    type: 'danger',
+                });
+            });
+        }else{
+            $.notify({
+                // options
+                message: 'No LEDs added.' 
+            },{
+                // settings
+                type: 'warning'
+            });
         }
 
         // toggle cards
@@ -418,6 +510,7 @@ $(document).ready(function(){
         sale.utility = utility.val();
 
         // add account limit length to account input
+        $("input[name='account-number'").val('');
         $("input[name='account-number'").attr({maxlength:account_length, minlength: account_length});
     });
 
@@ -433,20 +526,53 @@ $(document).ready(function(){
             $("#yearly-usage").hide("fold");
             $("#monthly-usage").slideDown();
             $("input[name='monthly-kwh'], input[name='monthly-supply-charges'],input[name='monthly-delivery-charges']").prop('required', true);
-            $("input[name='yearly-kwh'], input[name='yearly-supply-charges'],input[name='yearly-delivery-charges']").prop('required', false);
+            $("input[name='yearly-kwh'], input[name='yearly-supply-rate']").prop('required', false);
         }else {
             $("#monthly-usage").hide("fold");
             $("#yearly-usage").slideDown();
-            $("input[name='yearly-kwh'], input[name='yearly-supply-charges'],input[name='yearly-delivery-charges']").prop('required', true);
+            $("input[name='yearly-kwh'], input[name='yearly-supply-rate']").prop('required', true);
             $("input[name='monthly-kwh'], input[name='monthly-supply-charges'],input[name='monthly-delivery-charges']").prop('required', false);
         }
+
+        // update sale obj
+        sale.bill_info.bill_type = $(this).attr("data-type");
     });
 
 
     // bill image
-    $(':file').on('fileselect', function(event, numFiles, label) {
-        console.log(numFiles);
-        console.log(label);
+    $('#bill-image').on('fileselect', function(e) {
+        let bill_image = document.getElementById('bill-image').files[0];
+        let formData = new FormData();
+        console.log(sale);
+        formData.append('bill_image', bill_image, bill_image.name);
+        formData.append('sale_id', sale.id);
+
+        $.ajax({
+            type: "POST",
+            url: "/sale/upload/image/",
+            data: formData, 
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function(){
+                $.notify({
+                    // options
+                    message: 'image uploaded' 
+                },{
+                    // settings
+                    type: 'success'
+                });
+            },
+            fail: function(){
+                $.notify({
+                    // options
+                    message: 'Unknown error occured' 
+                },{
+                    // settings
+                    type: 'danger',
+                });
+            }
+        });
     });
 
 
@@ -458,51 +584,126 @@ $(document).ready(function(){
     $("form[name='bill-info-form']").submit(function(e){
         //Stop html form submission
         e.preventDefault(); 
-
-        
+        console.log('bill info form');
         // handle billing address
-        if( $("#billing-service-address-same").prop('checked') ){
-            sale.billing_address = sale.service_address;
-            sale.billing_city = sale.service_city;
-            sale.billing_state = sale.service_state;
-            sale.billing_zip_code = sale.service_zip_code;
+        if( !$("#billing-service-address-same").prop('checked') ){
+            sale.bill_info.billing_address = $("input[name='billing-address']").val();
+            sale.bill_info.billing_city = $("input[name='billing-city']").val();
+            sale.bill_info.billing_state = $("input[name='billing-state']").val();
+            sale.bill_info.billing_zip_code = $("input[name='billing-zip-code']").val();
         }else{
-            sale.billing_address = $("input[name='billing-address']");
-            sale.billing_city = $("input[name='billing-city']");
-            sale.billing_state = $("input[name='billing-state']");
-            sale.billing_zip_code = $("input[name='billing-zip-code']");
+            sale.bill_info.billing_address = sale.customer_info.service_address;
+            sale.bill_info.billing_city = sale.customer_info.service_city;
+            sale.bill_info.billing_state = sale.customer_info.service_state;
+            sale.bill_info.billing_zip_code = sale.customer_info.service_zip_code;
         }
         
-        sale.utility = $("#utility-dropdown option:selected").val();
-        sale.service_class = $("#service-class-dropdown option:selected").val();
-        sale.account_number = $("input[name='account-number']").val();
-
-        let bill_type = $(".usage-option-selected").attr('data-type');
-        let bill = {};
+        // update sale obj
+        sale.bill_info.utility = $("#utility-dropdown option:selected").val();
+        sale.bill_info.service_class = $("#service-class-dropdown option:selected").val();
+        sale.bill_info.account_number = $("input[name='account-number']").val();
+        sale.bill_info.service_start_date = $("input[name='service-start-date']").val();
+        sale.bill_info.month_of_bill = $("#month-of-bill-dropdown option:selected").val();
+        sale.bill_info.bill_type = $(".usage-option-selected").attr('data-type');
         
-        if( bill_type === 'monthly'){
-            bill.type = bill_type;
-            bill.kwh = $("input[name='monthly-kwh']");
-            bill.supply_charges = $("input[name='monthly-supply-charges']");
-            bill.delivery_charges = $("input[name='monthly-delivery-charges']");
-        }else if( bill_type === 'yearly'){
-            bill.type = bill_type;
-            bill.kwh = $("input[name='yearly-kwh']");
-            bill.supply_rate = $("input[name='supply-rate']");
+        // handle bill type
+        if( sale.bill_info.bill_type === 'monthly'){
+            sale.bill_info.kwh = $("input[name='monthly-kwh']").val();
+            sale.bill_info.supply_charges = $("input[name='monthly-supply-charges']").val();
+            sale.bill_info.delivery_charges = $("input[name='monthly-delivery-charges']").val();
+        }else if( sale.bill_info.bill_type === 'yearly'){
+            sale.bill_info.kwh = $("input[name='yearly-kwh']").val();
+            sale.bill_info.supply_rate = $("input[name='yearly-supply-rate']").val();
         }else{
-            alert('Please choose a usage type monthly/yearly.');
+            $.notify({
+                // options
+                message: 'Please choose a usage type monthly/yearly.' 
+            },{
+                // settings
+                type: 'danger'
+            });
         }
-        bill.month = $("#month-of-bill-dropdown option:selected").val();
 
-        let bill_image = document.getElementById('bill-image').files[0]
-        if( bill_image ){
-            bill.image = bill_image;
+        // check utility selected
+        if( !sale.bill_info.utility ){
+            $.notify({
+                // options
+                message: 'Please choose a utility.' 
+            },{
+                // settings
+                type: 'danger'
+            });
+            $("#utility-dropdown").focus();
+            $("input[name='account-number']").val('');
+            return;
         }
 
-        sale.bill = bill;
+        // check service selected
+        if( !sale.bill_info.service_class ){
+            $.notify({
+                // options
+                message: 'Please choose a service class.' 
+            },{
+                // settings
+                type: 'danger'
+            });
+            $("#service-class-dropdown").focus();
+            return;
+        }
 
-        sale.service_start_date = $("input[name='service-start-date']").val();
+        //  update sale 
+        updateSale(sale).then(function(data){
+            if( data.status === 'success'){
+                $.notify({
+                    // options
+                    message: 'Sale data saved.' 
+                },{
+                    // settings
+                    type: 'success',
+                    delay: 3000,
+                });
+                $.notify({
+                    // options
+                    title: 'Sale Ready!',
+                    message: 'Click this notification to see your savings now!',
+                    url: window.location.protocol + "//" + window.location.host + "/sale/"+sale.id+"/savings/",
+                    target: '_blank'
+                },{
+                    // settings
+                    element: '#bill-info-card',
+                    type: "info",
+                    allow_dismiss: false,
+                    newest_on_top: true,
+                    placement: {
+                        from: "bottom",
+                        align: "center"
+                    },
+                    delay: 30000,
+                    url_target: '_blank',
+                    mouse_over: 'pause',
+                });
+            }else{
+                $.notify({
+                    // options
+                    message: data.error_msg 
+                },{
+                    // settings
+                    type: 'danger'
+                });
+            }
+        }, function(error){
+            $.notify({
+                // options
+                message: 'Unknown error occured' 
+            },{
+                // settings
+                type: 'danger',
+            });
+        });
+    }); 
 
-        console.log(sale);
-    });
+
+    $(".led-on-sale-card").click(function(e){
+        $(this).children(".back").slideToggle();
+    });    
 });

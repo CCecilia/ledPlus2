@@ -1,0 +1,116 @@
+{% extends "webapp/base.html" %}
+{% block content %}
+{% load staticfiles %}
+            <div class="content">
+                <div class="container-fluid">
+                	<div class="row">
+                		<div class="col-lg-12 col-md-12">
+                            <div class="card card-nav-tabs">
+                                <div class="card-header" data-background-color="purple">
+                                    <div class="nav-tabs-navigation">
+                                        <div class="nav-tabs-wrapper">
+                                            <span class="nav-tabs-title">Sale {{ sale.id }}</span>
+                                            <ul class="nav nav-tabs" data-tabs="tabs">
+                                                <li class="">
+                                                    <a href="#customer-info" data-toggle="tab">
+                                                        <i class="material-icons">account_circle</i> Customer Info
+                                                        <div class="ripple-container"></div>
+                                                    </a>
+                                                </li>
+                                                <li class="">
+                                                    <a href="#leds" data-toggle="tab">
+                                                        <i class="material-icons">lightbulb_outline</i> LEDs
+                                                        <div class="ripple-container"></div>
+                                                    </a>
+                                                </li>
+                                                <li class="active">
+                                                    <a href="#bill-info" data-toggle="tab">
+                                                        <i class="material-icons">monetization_on</i> Bill Info
+                                                        <div class="ripple-container"></div>
+                                                    </a>
+                                                </li>
+                                                <li class="">
+                                                    <a href="#savings" data-toggle="tab">
+                                                        <i class="material-icons">money_off</i> Savings 
+                                                        <div class="ripple-container"></div>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-content">
+                                    <div class="tab-content">
+                                        <div class="tab-pane" id="customer-info">
+                                            <div class="row">
+                                            	<div class="col-md-12">
+                                            		<h3>General</h3>
+                                            		<p><strong>Name:</strong> {{ sale.business_name }}</p>
+                                            		<p><strong>Auth Rep:</strong> {{ sale.authorized_representative }}</p>
+                                            		<p><strong>Type:</strong> {{ sale.subtype }}</p>
+                                            	</div>
+                                            	<div class="col-md-6">
+                                            		<h3>Service Address</h3>
+                                            		<p><strong>Address:</strong> {{ sale.service_address }}</p>
+                                            		<p><strong>City:</strong> {{ sale.service_city }}</p>
+                                            		<p><strong>State:</strong> {{ sale.service_state }}</p>
+                                            		<p><strong>Zip:</strong> {{ sale.service_zip_code }}</p>
+                                            	</div>
+                                            	<div class="col-md-6">
+                                            		<h3>Billing Address</h3>
+                                            		<p><strong>Address:</strong> {{ sale.billing_address }}</p>
+                                            		<p><strong>City:</strong> {{ sale.billing_city }}</p>
+                                            		<p><strong>State:</strong> {{ sale.billing_state }}</p>
+                                            		<p><strong>Zip:</strong> {{ sale.billing_zip_code }}</p>
+                                            	</div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane" id="leds">
+                                        	<div class="row">
+	                                            {% for led in sale.leds.all %}
+	                                        		<div class="col-md-6 led-on-sale-card">
+	                                        			<div class="row front">
+	                                        				<div class="col-sm-3 col-md-3">
+                                                        		<img src="{{ led.led.image.url }}" width="100%" height="auto"/>
+		                                                    </div>
+		                                                    <div class="col-sm-6 col-md-6">
+		                                                    	<p><strong>Name</strong></p>
+		                                                        <p>{{ led.led.name }}</p>
+		                                                    </div>
+		                                                    <div class="col-sm-3 col-md-3">
+		                                                    	<p><strong>Type</strong></p>
+		                                                        <p>{{ led.led.type }}</p>
+		                                                    </div>
+	                                        			</div>
+	                                        			<div class="row back">
+	                                        				<div class="col-sm-6">
+	                                        					<p><strong>Total:</strong> {{ led.total_count }}</p>
+		                                        				<p><strong>LEDs:</strong> {{ led.led_count }}</p>
+		                                        				<p><strong>Delamping:</strong> {{ led.delamping_count }}</p>
+		                                        				<p><strong>Not Replacing:</strong> {{ led.not_replacing_count }}</p>
+	                                        				</div>
+	                                        				<div class="col-sm-6">
+	                                        					<p><strong>Color:</strong> {{ led.color }}</p>
+		                                        				<p><strong>Installation:</strong> {% if led.installation_required %}Yes{% else %}No{% endif %}</p>
+		                                        				<p><strong>Ceiling Height:</strong>{{ led.get_ceiling_height_display }}</p>
+		                                        				<p><strong>Recycling:</strong> {% if led.recycling %}Yes{% else %}No{% endif %}</p>
+	                                        				</div>
+	                                        			</div>
+	                                        		</div>
+                                        		{% endfor %}
+                                        	</div>
+                                        </div>
+                                        <div class="tab-pane active" id="bill-info">
+                                            
+                                        </div>
+                                        <div class="tab-pane" id="savings">
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                	</div>
+            	</div>
+        	</div>
+{% endblock %}

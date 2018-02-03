@@ -1,21 +1,11 @@
 from django.contrib import admin
-# from django.contrib.auth.admin import UserAdmin
-# from django.contrib.auth.models import User
-
+from import_export.admin import ImportExportModelAdmin
 from .models import *
 
-# class AgentInline(admin.StackedInline):
-#     model = Agent
-#     can_delete = False
-#     verbose_name_plural = 'agent'
+# @admin.register(Rate)
+# class RateAdmin(ImportExportModelAdmin):
+#     pass
 
-# # Define a new User admin
-# class UserAdmin(BaseUserAdmin):
-#     inlines = (AgentInline, )
-
-# # Re-register UserAdmin
-# admin.site.unregister(User)
-# admin.site.register(Agent, UserAdmin)
 admin.site.register(Subtype)
 admin.site.register(Agent)
 admin.site.register(Sale)
@@ -24,4 +14,5 @@ admin.site.register(SaleLed)
 admin.site.register(Utility)
 admin.site.register(Zone)
 admin.site.register(ServiceClass)
-# admin.site.register(UserAdmin)
+admin.site.register(RetailEnergyProvider)
+admin.site.register(Team)

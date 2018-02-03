@@ -39,12 +39,16 @@ login, register{
 	margin: 0 1%;
 }
 
+/* #billing-address,
+#monthly-usage, #yearly-usage, #bill-info-card{*/
+
 #led-selection-card, #billing-address,
-#monthly-usage, #yearly-usage{
+#monthly-usage, #yearly-usage, #bill-info-card{
 	display: none;
 }
 
-.led-option{
+.led-option, .led-on-sale-card .back,
+.led-on-sale-card .front{
     border: 1px solid;
     padding: 10px;
     box-shadow: 2px 4px #888888;
@@ -52,7 +56,8 @@ login, register{
     margin: 1% 0;
 }
 
-.led-option:hover{
+.led-option:hover, .led-on-sale-card .back:hover,
+.led-on-sale-card .front:hover{
     box-shadow: 1px 1px #888888;
 }
 
@@ -94,15 +99,9 @@ login, register{
     text-align: center
 }
 
-/*:-ms-input-placeholder { 
-   color: white;
+.led-on-sale-card .back{
+	display: none;
 }
-
-::-ms-input-placeholder { 
-   color: white;
-}*/
-
-
 
 @media (max-width: 760px) {
 	.renewal-option, .usage-option{

@@ -1,9 +1,12 @@
 __author__ = 'christian.cecilia1@gmail.com'
+import csv
+from dateutil.parser import parse as dateParse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 import json
 from .models import *
 
@@ -56,6 +59,17 @@ class HtmlRendering:
 			'sales': sales
 		}
 		return render(request, 'webapp/sales.html', context)
+
+	@login_required
+	def saleSavings(request, sale_id):
+		sale = get_object_or_404(Sale, pk=sale_id)
+		SaleViews.calculateSavings(sale)
+
+		context = {
+			'page': 'Savings',
+			'sale': sale
+		}
+		return render(request, 'webapp/saleSavings.html', context)
 
 
 class UserViews:
@@ -140,9 +154,9 @@ class UserViews:
 		return redirect('/')
 
 
-class SaleViews():
+class SaleViews:
 
-	def addLEDsToSale(sale, leds):
+	def addLEDs(sale, leds):
 		# clear any existing leds
 		[sale.leds.remove(led) for led in sale.leds.all()]
 
@@ -178,6 +192,24 @@ class SaleViews():
 			)
 			sale.leds.add(sale_led)
 
+	def uploadBillImage(request):
+		bill_image = request.FILES['bill_image']
+		sale_id = request.POST['sale_id']
+		sale = get_object_or_404(Sale, pk=sale_id)
+		sale.bill_image = bill_image
+
+		try:
+			sale.save()
+			response = {
+				'status': 200
+			}
+		except Exception as e:
+			response = {
+				'status': 500,
+				'error_msg': str(e)
+			}
+		return HttpResponse(response)
+
 	def update(request):
 		# dec vars
 		sale_data = json.loads(request.body)
@@ -191,24 +223,83 @@ class SaleViews():
 				agent=request.user
 			)
 
-		# update sale data
-		sale.renewal = sale_data['renewal']
-		sale.business_name = sale_data['business_name']
-		sale.authorized_representative = sale_data['auth_rep']
-		sale.service_address = sale_data['service_address']
-		sale.service_city = sale_data['service_city']
-		sale.service_state = sale_data['service_state']
-		sale.service_zip_code = sale_data['service_zip_code']
-		subtype = Subtype.objects.get(id=sale_data['subtype'])
-		sale.subtype = subtype
-		sale.annual_hours_of_operation = sale_data['annual_hours_of_operation']
+		# handle customer info
+		if sale_data['customer_info']:
+			sale.renewal = sale_data['customer_info']['renewal']
+			sale.business_name = sale_data['customer_info']['business_name']
+			sale.authorized_representative = sale_data['customer_info']['auth_rep']
+			sale.service_address = sale_data['customer_info']['service_address']
+			sale.service_city = sale_data['customer_info']['service_city']
+			sale.service_state = sale_data['customer_info']['service_state']
+			sale.service_zip_code = sale_data['customer_info']['service_zip_code']
+			subtype = Subtype.objects.get(id=sale_data['customer_info']['subtype'])
+			sale.subtype = subtype
+			sale.annual_hours_of_operation = sale_data['customer_info']['annual_hours_of_operation']
 
-		# handle leds if present
-		try:
+		# handle leds
+		if len(sale_data['leds']) > 0:
 			leds = sale_data['leds']
-			SaleViews.addLEDsToSale(sale, leds)
-		except KeyError:
-			pass
+			SaleViews.addLEDs(sale, leds)
+		elif len(sale_data['leds']) == 0:
+			[sale.leds.remove(led) for led in sale.leds.all()]
+
+		# handle bill info
+		if sale_data['bill_info']:
+			sale.billing_address = sale_data['bill_info']['billing_address']
+			sale.billing_city = sale_data['bill_info']['billing_city']
+			sale.billing_state = sale_data['bill_info']['billing_state']
+			sale.billing_zip_code = sale_data['bill_info']['billing_zip_code']
+			sale.utility = Utility.objects.get(id=sale_data['bill_info']['utility'])
+			
+			# add zone to sale if needed
+			if sale.utility.zone_lookup:
+				zone_match = [zone for zone in  sale.utility.zones.all() if zone.zip_code == sale.service_zip_code[:5]]
+				if zone_match:
+					sale.zone = zone_match[0]
+				else:
+					response = {
+						'status': 'fail',
+						'error_msg': 'Utility uses zones but customer\'s zone not found in system'
+					}
+					# send reponse JSON
+					return JsonResponse(response)
+			
+			sale.service_class = ServiceClass.objects.get(id=sale_data['bill_info']['service_class'])
+			
+			if Sale.objects.filter(utility_account_number=sale_data['bill_info']['account_number']):
+				response = {
+					'status': 'fail',
+					'error_msg': 'Account number is already in use.'
+				}
+				# send reponse JSON
+				return JsonResponse(response)
+
+			sale.utility_account_number = sale_data['bill_info']['account_number']
+			sale.bill_type = sale_data['bill_info']['bill_type']
+			sale.month_of_bill = sale_data['bill_info']['month_of_bill']
+
+			# check bill type
+			if sale_data['bill_info']['bill_type'] == 'monthly':
+				sale.supply_charges = sale_data['bill_info']['supply_charges']
+				sale.delivery_charges = sale_data['bill_info']['delivery_charges']
+				# estimate annual kwh
+				estimated_annual_kwh = int(sale_data['bill_info']['kwh']) / 0.0804
+				sale.kwh = estimated_annual_kwh
+			else:
+				sale.supply_rate = sale_data['bill_info']['supply_rate']
+				sale.kwh = sale_data['bill_info']['kwh']
+
+			# ensure service start date is in future
+			today = timezone.now()
+			if dateParse(sale_data['bill_info']['service_start_date']).date() <= today.date():
+				response = {
+					'status': 'fail',
+					'error_msg': 'Service start date must be in the future.'
+				}
+				# send reponse JSON
+				return JsonResponse(response)
+
+			sale.service_start_date = dateParse(sale_data['bill_info']['service_start_date']).date()
 
 		try:
 			sale.save()
@@ -224,3 +315,21 @@ class SaleViews():
 
 		# send reponse JSON
 		return JsonResponse(response)
+
+	def calculateSavings(sale):
+		# check sale has rate
+		if not sale.base_rate:
+			RateViews.findRate(sale)
+		return
+
+
+class RateViews:
+
+	def findRate(sale):
+		rate_sheet = sale.agent.agent.retail_energy_provider.rate_upload
+		with open(rate_sheet.path) as ratesfile:
+			reader = csv.reader(ratesfile)
+			for row in reader:
+				print(row[0])
+
+		return
