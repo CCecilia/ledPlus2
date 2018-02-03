@@ -266,7 +266,7 @@ class SaleViews:
 			
 			sale.service_class = ServiceClass.objects.get(id=sale_data['bill_info']['service_class'])
 			
-			if Sale.objects.filter(utility_account_number=sale_data['bill_info']['account_number']):
+			if Sale.objects.filter(utility_account_number=sale_data['bill_info']['account_number']).exclude(id=sale.id):
 				response = {
 					'status': 'fail',
 					'error_msg': 'Account number is already in use.'
@@ -326,10 +326,24 @@ class SaleViews:
 class RateViews:
 
 	def findRate(sale):
+		# get rate sheet
 		rate_sheet = sale.agent.agent.retail_energy_provider.rate_upload
+		# open
 		with open(rate_sheet.path) as ratesfile:
-			reader = csv.reader(ratesfile)
-			for row in reader:
-				print(row[0])
+			reader = list(csv.reader(ratesfile))
+			# get headers/gen col keys
+			headers = dict([(str(reader[0][i]).lower().replace(' ','_'), i) for i in range(len(reader[0]))])
+			# start filter down for rate
+			state_rates = [row for row in reader if row[headers['state']] == sale.service_state]
+			if len(state_rates) == 0:
+				return {'status': 'failed', 'error_msg': 'failed on state'}
+			
+			utility_rates = [row for row in state_rates if str(row[headers['utility']]).upper() == str(sale.utility.name).upper()]
+			if len(utility_rates) == 0:
+				return {'status': 'failed', 'error_msg': 'failed on utility'}
+
+
+			print('init: {}, state: {}, utility: {}'.format(len(reader), len(state_rates), len(utility_rates)))
+			
 
 		return
