@@ -580,6 +580,22 @@ $(document).ready(function(){
     $("input[name='service-start-date']").datepicker();
 
 
+    // service satrt date notification 
+    $("input[name='service-start-date']").on('change', function(e){
+        service_date = $(this).val();
+        if( service_date.substring(3, 5) !== '01'){
+            $.notify({
+                // options
+                message: 'Most rates start on the first of each month. Choosing any other day reduces likelyhood of finding a rate.' 
+            },{
+                // settings
+                type: 'danger',
+                delay: 3000,
+            });
+        }
+    });
+
+
     // bill info form
     $("form[name='bill-info-form']").submit(function(e){
         //Stop html form submission
@@ -703,6 +719,7 @@ $(document).ready(function(){
     }); 
 
 
+    // 
     $(".led-on-sale-card").click(function(e){
         $(this).children(".back").slideToggle();
     });    

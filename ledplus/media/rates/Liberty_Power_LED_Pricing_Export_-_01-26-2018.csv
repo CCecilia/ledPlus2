@@ -1,5 +1,6 @@
 Utility,State,Rep,Team Code,Rate,Zone,Product,Service Class,Start Date,Cut Off Date,Annual_usage_Min,Annual_usage_Max,Sales Tax,Marketing Adder,Logistics,Energy Only Adder,Term,Max Adder
-ACE,NJ,Liberty Power,AFF,0.0876,AECO,Electricity,AGS,11/1/2018,1/27/2018,250001,500000,0.06875,0.005,0,0,24,0.05
+CONED,NY,Liberty Power,Liberty Team,0.0876,J,Electricity,G1,11/1/2018,2/27/2018,100001,500000,0.06875,0.005,0,0,24,0.05
+CONED,NY,Liberty Power,Liberty Team,0.0976,J,Electricity,G1,11/1/2018,2/27/2018,100001,500000,0.06875,0.005,0,0,24,0.05
 ACE,NJ,Liberty Power,AFF,0.08807,AECO,Electricity,AGS,10/1/2018,1/27/2018,250001,500000,0.06875,0.005,0,0,24,0.05
 ACE,NJ,Liberty Power,AFF,0.08855,AECO,Electricity,AGS,9/1/2018,1/27/2018,250001,500000,0.06875,0.005,0,0,24,0.05
 ACE,NJ,Liberty Power,AFF,0.08898,AECO,Electricity,AGS,8/1/2018,1/27/2018,500001,2000000,0.06875,0.005,0,0,24,0.05

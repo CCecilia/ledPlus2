@@ -17,7 +17,6 @@ class RetailEnergyProvider(models.Model):
 
 class Team(models.Model):
     name = models.CharField(max_length=254, blank=False, null=False)
-    agents = models.ManyToManyField('Agent', blank=True)
 
     def __str__(self):
         return self.name
@@ -26,32 +25,10 @@ class Team(models.Model):
 class Agent(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	retail_energy_provider = models.ForeignKey('RetailEnergyProvider', on_delete=models.CASCADE, blank=False, null=False)
+	team = models.ForeignKey('Team', on_delete=models.PROTECT, blank=False, null=False)
 
 	def __str__(self):
-		return self.user.email
-
-
-# class Rate(models.Model):
-# 	utility = models.ForeignKey('Utility', blank=False, on_delete=models.CASCADE)
-# 	state = models.CharField(max_length=2, blank=False, null=False)
-# 	retail_energy_provider = models.ForeignKey('RetailEnergyProvider', blank=False, on_delete=models.CASCADE)
-# 	team = models.ForeignKey('Team', blank=False, on_delete=models.CASCADE)
-# 	rate = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
-# 	zone = models.ForeignKey('Zone', blank=False, on_delete=models.CASCADE)
-# 	service_class = models.ForeignKey('ServiceClass', blank=False, on_delete=models.CASCADE)
-# 	start_date = models.DateField(blank=False)
-# 	end_date = models.DateField(blank=False)
-# 	annual_usage_min = models.IntegerField(default=0)
-# 	annual_usage_max = models.IntegerField(default=100000)
-# 	sales_tax = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
-# 	marketing_adder = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
-# 	logistics_adder = models.DecimalField(max_digits=6, decimal_places=5, blank=False)
-# 	energy_only_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0)
-# 	term = models.IntegerField(default=24)
-# 	max_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0.05)
-
-# 	def __str__(self):
-# 		return self.id
+		return self.user.username
 
 
 class Subtype(models.Model):
@@ -112,12 +89,12 @@ class Led(models.Model):
 	conventional_wattage = models.IntegerField(default=0)
 	order_number = models.IntegerField(default=0)
 	active = models.BooleanField(default=False)
-	zero_to_fifty = models.CharField(max_length=254, default="0.00")
-	fifty_one_to_two_hundred = models.CharField(max_length=254, default="0.00")
-	two_hundred_one_to_five_hundred = models.CharField(max_length=254, default="0.00")
-	five_hundred_to_one_thousand = models.CharField(max_length=254, default="0.00")
-	min_visit_cost = models.CharField(max_length=254, default="0.00")
-	premium_ceiling_multiplier = models.CharField(max_length=254, default="0.00")
+	zero_to_fifty = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	fifty_one_to_two_hundred = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	two_hundred_one_to_five_hundred = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	five_hundred_to_one_thousand = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	min_visit_cost = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	premium_ceiling_multiplier = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
 	brands = MultiSelectField(choices=BRANDS, default='Philips')
 	colors = MultiSelectField(choices=COLORS, default='5000K')
 	lumens = models.CharField(max_length=254, blank=True, null=True)
@@ -182,6 +159,12 @@ class Sale(models.Model):
 	supply_charges = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
 	delivery_charges = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
 	base_rate = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
+	logistics_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
+	marketing_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
+	energy_only_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0)
+	sales_tax = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
+	max_adder = models.DecimalField(max_digits=3, decimal_places=2, default=0.05)
+	total_installation_cost = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
 	# weight = models.DecimalField(max_digits=6, decimal_places=5, default=None)
     # customer_phone_number = models.CharField(max_length=255,blank=True,null=True)
     # customer_email_address = models.CharField(max_length=255,blank=True,null=True)

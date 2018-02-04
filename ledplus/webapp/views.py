@@ -1,5 +1,7 @@
 __author__ = 'christian.cecilia1@gmail.com'
+from .models import *
 import csv
+from datetime import datetime as dt
 from dateutil.parser import parse as dateParse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -8,7 +10,7 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 import json
-from .models import *
+from operator import itemgetter
 
 
 class HtmlRendering:
@@ -159,7 +161,10 @@ class SaleViews:
 	def addLEDs(sale, leds):
 		# clear any existing leds
 		[sale.leds.remove(led) for led in sale.leds.all()]
+		sale.total_installation_cost = 0
+		sale.save()
 
+		total_installation_cost = 0
 		# create SaleLed obj and associate to sale
 		for i in range(len(leds)):
 			led = Led.objects.get(id=leds[i]['led_id'])
@@ -176,6 +181,28 @@ class SaleViews:
 			# js true to python True
 			if leds[i]['installation'] == 'true':
 				leds[i]['installation'] = True
+
+				# handle installatuion costs
+				# Add in bulb installation cost based on bulb qty
+				if int(leds[i]['led_count']) <= 50:
+					installation_cost = float(led.zero_to_fifty) * int(leds[i]['led_count'])
+
+				if int(leds[i]['led_count']) >= 51 and int(leds[i]['led_count']) <= 200:
+					installation_cost = float(led.fifty_one_to_two_hundred) * int(leds[i]['led_count'])
+
+				if int(leds[i]['led_count']) >= 201 and int(leds[i]['led_count']) <= 500:
+					installation_cost = float(led.two_hundred_one_to_five_hundred) * int(leds[i]['led_count'])
+
+				if int(leds[i]['led_count']) >= 501:
+					installation_cost = float(led.five_hundred_to_one_thousand) * int(leds[i]['led_count'])
+
+				# Premium Ceiling Multiplier
+				if leds[i]['ceiling_height'] == 1:
+					# Add in premium ceiling height multiplier for being over 16 feet
+					total_installation_cost += installation_cost * float(led.premium_ceiling_multiplier)
+				else:
+					#Otherwise just add installation to sale max
+					total_installation_cost += installation_cost
 			else:
 				leds[i]['installation'] = False
 
@@ -191,6 +218,10 @@ class SaleViews:
 				ceiling_height=leds[i]['ceiling_height']
 			)
 			sale.leds.add(sale_led)
+
+			# installation cost
+			sale.total_installation_cost = total_installation_cost
+			sale.save()
 
 	def uploadBillImage(request):
 		bill_image = request.FILES['bill_image']
@@ -303,6 +334,11 @@ class SaleViews:
 
 		try:
 			sale.save()
+
+			# find rate if sale bill updated
+			if sale['bill_info']:
+				RateViews.findRate(sale)
+				
 			response = {
 				'status': 'success',
 				'sale_id': sale.id
@@ -317,9 +353,7 @@ class SaleViews:
 		return JsonResponse(response)
 
 	def calculateSavings(sale):
-		# check sale has rate
-		if not sale.base_rate:
-			RateViews.findRate(sale)
+		
 		return
 
 
@@ -331,19 +365,68 @@ class RateViews:
 		# open
 		with open(rate_sheet.path) as ratesfile:
 			reader = list(csv.reader(ratesfile))
+
 			# get headers/gen col keys
-			headers = dict([(str(reader[0][i]).lower().replace(' ','_'), i) for i in range(len(reader[0]))])
-			# start filter down for rate
+			headers = dict([(str(reader[0][i]).lower().replace(' ', '_'), i) for i in range(len(reader[0]))])
+
+			# filter: agent's team
+			team_rates = [row for row in reader if str(row[headers['team_code']]).lower() == str(sale.agent.agent.team.name).lower() or str(row[headers['team_code']]).lower() == 'all']
+			if len(team_rates) == 0:
+				return {'status': 'failed', 'error_msg': 'failed on state'}
+
+			# filter: state
 			state_rates = [row for row in reader if row[headers['state']] == sale.service_state]
 			if len(state_rates) == 0:
 				return {'status': 'failed', 'error_msg': 'failed on state'}
 			
+			# filter: utility
 			utility_rates = [row for row in state_rates if str(row[headers['utility']]).upper() == str(sale.utility.name).upper()]
 			if len(utility_rates) == 0:
 				return {'status': 'failed', 'error_msg': 'failed on utility'}
 
+			# filter: zone
+			if sale.zone:
+				zone_rates = [row for row in utility_rates if str(row[headers['zone']]).upper() == str(sale.zone.name).upper()]
+				
+				if len(zone_rates) == 0:
+					return {'status': 'failed', 'error_msg': 'failed on zone'}
+			# filter: service class
+				service_class_rates = [row for row in zone_rates if str(row[headers['service_class']]).upper() == str(sale.service_class.name).upper()]
+			else:
+				service_class_rates = [row for row in utility_rates if str(row[headers['service_class']]).upper() == str(sale.service_class.name).upper()]
 
-			print('init: {}, state: {}, utility: {}'.format(len(reader), len(state_rates), len(utility_rates)))
+			if len(service_class_rates) == 0:
+				return {'status': 'failed', 'error_msg': 'failed on service class'}
+
+			# filter: start/cutoff date
+			date_rates = [row for row in service_class_rates if dt.strptime(row[headers['start_date']], "%m/%d/%Y").date() >= sale.service_start_date and dt.strptime(row[headers['cut_off_date']], "%m/%d/%Y").date() <= sale.service_start_date]
+
+			if len(date_rates) == 0:
+				return {'status': 'failed', 'error_msg': 'failed on start/cuttof date'}
+
+			# filter: usage min/max
+			usage_rates = [row for row in date_rates if float(row[headers['annual_usage_min']]) <= sale.kwh and float(row[headers['annual_usage_max']]) >= sale.kwh]
+
+			if len(usage_rates) == 0:
+				return {'status': 'failed', 'error_msg': 'failed on annual usage min/max'}
+			else:
+				# sort by lowest rate
+				rate = sorted(usage_rates, key=itemgetter(headers['rate']))[0]
+
+				# add rate data to sale
+				sale.base_rate = rate[headers['rate']]
+				sale.logistics_adder = rate[headers['logistics']]
+				sale.marketing_adder = rate[headers['marketing_adder']]
+				sale.sales_tax = rate[headers['sales_tax']]
+				sale.max_adder = rate[headers['max_adder']]
 			
+			try:
+				sale.save()
+			except Exception as e:
+				response = {
+					'status': 'fail',
+					'error_msg': str(e)
+				}
+				return response
 
-		return
+		return {'status': 'success'}
