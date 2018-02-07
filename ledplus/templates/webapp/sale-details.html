@@ -6,57 +6,62 @@
                 	<div class="row">
                 		<div class="col-lg-12 col-md-12">
                             <div class="card card-nav-tabs">
-                                <div class="card-header" data-background-color="purple">
-                                    <div class="nav-tabs-navigation">
-                                        <div class="nav-tabs-wrapper">
-                                            <span class="nav-tabs-title">Sale {{ sale.id }}</span>
-                                            <ul class="nav nav-tabs" data-tabs="tabs">
-                                                <li class="">
-                                                    <a href="#customer-info" data-toggle="tab">
-                                                        <i class="material-icons">account_circle</i> Customer Info
-                                                        <div class="ripple-container"></div>
-                                                    </a>
-                                                </li>
-                                                <li class="">
-                                                    <a href="#leds" data-toggle="tab">
-                                                        <i class="material-icons">lightbulb_outline</i> LEDs
-                                                        <div class="ripple-container"></div>
-                                                    </a>
-                                                </li>
-                                                <li class="active">
-                                                    <a href="#bill-info" data-toggle="tab">
-                                                        <i class="material-icons">monetization_on</i> Bill Info
-                                                        <div class="ripple-container"></div>
-                                                    </a>
-                                                </li>
-                                                <li class="">
-                                                    <a href="#savings" data-toggle="tab">
-                                                        <i class="material-icons">money_off</i> Savings 
-                                                        <div class="ripple-container"></div>
-                                                    </a>
-                                                </li>
-                                            </ul>
+                                <div class="card-header" data-background-color="green">
+                                    <div class="row">
+                                        <div class="col-md-10">
+                                            <div class="nav-tabs-navigation">
+                                                <div class="nav-tabs-wrapper">
+                                                    <span class="nav-tabs-title">Sale {{ sale.id }}</span>
+                                                    <ul class="nav nav-tabs" data-tabs="tabs">
+                                                        <li class="active">
+                                                            <a href="#customer-info" data-toggle="tab">
+                                                                <i class="material-icons">account_circle</i> Customer Info
+                                                                <div class="ripple-container"></div>
+                                                            </a>
+                                                        </li>
+                                                        {% if sale.leds.all %}
+                                                            <li class="">
+                                                                <a href="#leds" data-toggle="tab">
+                                                                    <i class="material-icons">lightbulb_outline</i> LEDs
+                                                                    <div class="ripple-container"></div>
+                                                                </a>
+                                                            </li>
+                                                        {% endif %}
+                                                        <li class="">
+                                                            <a href="#bill-info" data-toggle="tab">
+                                                                <i class="material-icons">monetization_on</i> Bill Info
+                                                                <div class="ripple-container"></div>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="row">
+                                                <a class="edit-sale" href="{% url 'webapp:saleEdit' sale.id %}"><i class="material-icons">edit</i></a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="card-content">
                                     <div class="tab-content">
-                                        <div class="tab-pane" id="customer-info">
+                                        <div class="tab-pane active" id="customer-info">
                                             <div class="row">
-                                            	<div class="col-md-12">
+                                            	<div class="col-sm-12 col-md-4">
                                             		<h3>General</h3>
                                             		<p><strong>Name:</strong> {{ sale.business_name }}</p>
                                             		<p><strong>Auth Rep:</strong> {{ sale.authorized_representative }}</p>
                                             		<p><strong>Type:</strong> {{ sale.subtype }}</p>
                                             	</div>
-                                            	<div class="col-md-6">
+                                            	<div class="col-sm-6 col-md-4">
                                             		<h3>Service Address</h3>
                                             		<p><strong>Address:</strong> {{ sale.service_address }}</p>
                                             		<p><strong>City:</strong> {{ sale.service_city }}</p>
                                             		<p><strong>State:</strong> {{ sale.service_state }}</p>
                                             		<p><strong>Zip:</strong> {{ sale.service_zip_code }}</p>
                                             	</div>
-                                            	<div class="col-md-6">
+                                            	<div class="col-sm-6 col-md-4">
                                             		<h3>Billing Address</h3>
                                             		<p><strong>Address:</strong> {{ sale.billing_address }}</p>
                                             		<p><strong>City:</strong> {{ sale.billing_city }}</p>
@@ -100,11 +105,23 @@
                                         		{% endfor %}
                                         	</div>
                                         </div>
-                                        <div class="tab-pane active" id="bill-info">
-                                            <p>Service Class: {{ sale.service_class.name }}</p>
-                                        </div>
-                                        <div class="tab-pane" id="savings">
-                                            
+                                        <div class="tab-pane" id="bill-info">
+                                            <div class="row">
+                                                <div class="col-sm-6 col-md-4">
+                                                    <p><strong>Utility:</strong> {{ sale.utility.name }}</p>
+                                                    <p><strong>Service Class:</strong> {{ sale.service_class.name }}</p>
+                                                    <p><strong>Account Number:</strong> {{ sale.utility_account_number }}</p>
+                                                </div>
+                                                <div class="col-sm-6 col-md-4">
+                                                    <p><strong>Bill Type:</strong> {{ sale.bill_type }}</p>
+                                                    <p><strong>{% if sale.bill_type == 'monthly' %}Estimated {% endif %}Annual kWh:</strong> {{ sale.kwh }}</p>
+                                                    <p><strong>Supply Rate:</strong> {{ sale.kwh }}</p>
+                                                </div>
+                                                <div class="col-sm-12 col-md-4">
+                                                    <p><strong>Service Start Date:</strong> {{ sale.service_start_date }}</p>
+                                                    <img src="{{ sale.bill_image }}" />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

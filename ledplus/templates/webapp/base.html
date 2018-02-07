@@ -216,5 +216,10 @@
 <script src="{% static 'js/material-dashboard.js' %}" type="text/javascript"></script>
 <!-- LED Plus javascript methods -->
 <script src="{% static 'js/ledplus-scripts.js' %}" type="text/javascript"></script>
+{% if addSaleData %}
+    <script>
+        addExistingSaleData('{{ sale.id }}');
+    </script>
+{% endif %}
 
 </html>

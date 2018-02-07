@@ -66,6 +66,24 @@ $(document).on('change', ':file', function() {
     input.trigger('fileselect', [numFiles, label]);
 });
 
+function addExistingSaleData(sale_id){
+    $.ajaxSetup({
+        headers: {
+            "X-CSRFToken": $("input[name='csrfmiddlewaretoken']").val()
+        }
+    });
+    $.ajax({
+        type: "POST",
+        url: "/sale/get/data/",
+        data: JSON.stringify({sale_id: sale_id, callback_format: 'json'}), 
+        success: function(sale_data){
+            console.log(sale_data);
+        },
+        fail: function(data){
+            console.log('breaking');
+        }
+    });
+}
 
 $(document).ready(function(){
     $.ajaxSetup({
@@ -282,8 +300,15 @@ $(document).ready(function(){
         //Stop html form submission
         event.preventDefault();
 
+
+        if( $('.renewal-option-selected').attr('data-type') == 'renewal' ){
+            sale.customer_info.renewal = true;
+        }else{
+            sale.customer_info.renewal = false;
+        }
         // check renewal selected
         if( sale.customer_info.renewal != true && sale.customer_info.renewal != false ){
+
             $.notify({
                 // options
                 message: 'Please choose renewal or new customer.' 
@@ -295,7 +320,9 @@ $(document).ready(function(){
             return;
         }
 
+
         // check subtype
+        sale.customer_info.subtype = $("#subtype-dropdown option:selected").val();
         if( isNaN(sale.customer_info.subtype) ){
             $.notify({
                 // options
@@ -367,7 +394,15 @@ $(document).ready(function(){
 
 
     // sales table
-    $('#sales-table').DataTable();
+    let sales_table = $('#sales-table').DataTable( {
+        stateSave: true
+    } );
+
+    $('#sales-table tbody').on('click', 'tr', function () {
+        let table = $('#sales-table');
+        var data = sales_table.row( this ).data();
+        window.location = window.location.protocol + "//" + window.location.host + "/sale/"+data[0]+"/details/"
+    } );
 
 
     // show led counting  
@@ -682,7 +717,7 @@ $(document).ready(function(){
                     // options
                     title: 'Sale Ready!',
                     message: 'Click this notification to see your savings now!',
-                    url: window.location.protocol + "//" + window.location.host + "/sale/"+sale.id+"/savings/",
+                    url: window.location.protocol + "//" + window.location.host + "/sale/"+sale.id+"/details/",
                     target: '_blank'
                 },{
                     // settings

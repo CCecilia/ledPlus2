@@ -6,6 +6,7 @@ from dateutil.parser import parse as dateParse
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.core import serializers
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
@@ -63,15 +64,26 @@ class HtmlRendering:
 		return render(request, 'webapp/sales.html', context)
 
 	@login_required
-	def saleSavings(request, sale_id):
+	def saleDetails(request, sale_id):
 		sale = get_object_or_404(Sale, pk=sale_id)
 		SaleViews.calculateSavings(sale)
 
 		context = {
-			'page': 'Savings',
+			'page': 'Details',
 			'sale': sale
 		}
-		return render(request, 'webapp/saleSavings.html', context)
+		return render(request, 'webapp/sale-details.html', context)
+
+	@login_required
+	def saleEdit(request, sale_id):
+		sale = get_object_or_404(Sale, pk=sale_id)
+
+		context = {
+			'page': 'Sale Edit',
+			'sale': sale,
+			'addSaleData': True
+		}
+		return render(request, 'webapp/new-sale.html', context)
 
 
 class UserViews:
@@ -284,7 +296,7 @@ class SaleViews:
 			
 			# add zone to sale if needed
 			if sale.utility.zone_lookup:
-				zone_match = [zone for zone in  sale.utility.zones.all() if zone.zip_code == sale.service_zip_code[:5]]
+				zone_match = [zone for zone in sale.utility.zones.all() if zone.zip_code == sale.service_zip_code[:5]]
 				if zone_match:
 					sale.zone = zone_match[0]
 				else:
@@ -355,6 +367,67 @@ class SaleViews:
 	def calculateSavings(sale):
 		
 		return
+
+	def getData(request):
+		request_data = json.loads(request.body)
+		sale_id = request_data['sale_id']
+		sale = get_object_or_404(Sale, pk=sale_id)
+		callback_format = request_data['callback_format']
+
+		if callback_format == 'json':
+			# serialize: json
+			sale_data = {
+				'id': int(sale.id),
+				'customer_info': {
+					'renewal': sale.renewal,
+					'business_name': str(sale.business_name),
+					'authorized_representative': str(sale.authorized_representative),
+					'service_address': str(sale.service_address),
+					'service_city': str(sale.service_city),
+					'service_state': str(sale.service_state),
+					'service_zip_code': str(sale.service_zip_code),
+					'subtype': int(sale.subtype.id),
+					'annual_hours_of_operation': int(sale.annual_hours_of_operation),
+				},
+				'leds': [],
+			}
+
+			for led in sale.leds.all():
+				led_data = {
+					'led': int(led.led.id),
+					'color': str(led.color),
+					'led_count': int(led.led_count),
+					'total_count': int(led.total_count),
+					'not_replacing_count': int(led.not_replacing_count),
+					'delamping_count': int(led.delamping_count),
+					'name': str(led.led.name),
+					'type': str(led.led.type),
+					'image': str(led.led.image)
+				}
+				sale_data['leds'].append(led_data)
+
+			if sale.service_start_date:
+				bill_data = {
+					'billing_address': str(sale.billing_address),
+					'billing_city': str(sale.billing_city),
+					'billing_state': str(sale.billing_state),
+					'billing_zip_code': str(sale.billing_zip_code),
+					'utility': int(sale.utility.id),
+					'service_class': int(sale.service_class.id),
+					'utility_account_number': str(sale.utility_account_number),
+					'bill_type': str(sale.bill_type),
+					'month_of_bill': str(sale.month_of_bill),
+					'service_start_date': str(sale.service_start_date),
+					'bill_image': str(sale.bill_image),
+					'kwh': int(sale.kwh),
+					'supply_charges': float(sale.supply_charges),
+					'delivery_charges': float(sale.delivery_charges)
+				}
+				sale_data['bill_info'] = bill_data
+			response = HttpResponse(json.dumps(sale_data))
+		else:
+			response = HttpResponse(200, sale)
+		return response
 
 
 class RateViews:
@@ -430,3 +503,4 @@ class RateViews:
 				return response
 
 		return {'status': 'success'}
+

@@ -8,17 +8,17 @@
                             <!-- Customer Info Section -->
                             <div id="customer-info-card" class="card">
                                 <div class="card-header" data-background-color="green">
-                                    <h4 class="title">New Sale</h4>
+                                    <h4 class="title">Sale {{ sale.id }}</h4>
                                     <p class="category">Customer Information</p>
                                 </div>
                                 <div class="card-content">
                                     <form name="new-sale-customer-info">
                                         {% csrf_token %}
                                         <div class="row">
-                                            <div class="col-sm-12 col-md-6 text-center renewal-option" data-type="renewal">
+                                            <div class="col-sm-12 col-md-6 text-center renewal-option {% if sale.renewal %}renewal-option-selected{% endif %}" data-type="renewal">
                                                 Renewal
                                             </div>
-                                            <div class="col-sm-12 col-md-6 text-center renewal-option" data-type="new_customer">
+                                            <div class="col-sm-12 col-md-6 text-center renewal-option {% if not sale.renewal %}renewal-option-selected{% endif %}" data-type="new_customer">
                                                 New Customer
                                             </div>
                                         </div>
@@ -26,13 +26,13 @@
                                             <div class="col-md-6">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">Business Name</label>
-                                                    <input name="business-name" type="text" class="form-control" required="true">
+                                                    <input name="business-name" type="text" class="form-control" required="true" value="{{ sale.business_name }}">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">Authorized Representative</label>
-                                                    <input name="auth-rep" type="text" class="form-control" required="true">
+                                                    <input name="auth-rep" type="text" class="form-control" required="true" value="{{ sale.authorized_representative }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -40,7 +40,7 @@
                                             <div class="col-md-12">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">Adress</label>
-                                                    <input name="service-address" type="text" class="form-control" required="true">
+                                                    <input name="service-address" type="text" class="form-control" required="true" value="{{ sale.service_address }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -48,19 +48,19 @@
                                             <div class="col-md-4">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">City</label>
-                                                    <input name="service-city" type="text" class="form-control" required="true">
+                                                    <input name="service-city" type="text" class="form-control" required="true" value="{{ sale.service_city }}">
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">State</label>
-                                                    <input name="service-state" type="text" class="form-control" minlength="2" maxlength="2" title="Example. NY" required="true">
+                                                    <input name="service-state" type="text" class="form-control" minlength="2" maxlength="2" title="Example. NY" required="true" value="{{ sale.service_state }}">
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group label-floating">
                                                     <label class="control-label">Postal Code</label>
-                                                    <input name="service-zip-code" type="text" pattern="(\d{5}([\-]\d{4})?)" title="Example 08010 or 08010-1004" class="form-control" minlength="5" maxlength="10" required="true">
+                                                    <input name="service-zip-code" type="text" pattern="(\d{5}([\-]\d{4})?)" title="Example 08010 or 08010-1004" class="form-control" minlength="5" maxlength="10" required="true"  value="{{ sale.service_zip_code }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -69,7 +69,7 @@
                                                 <div class="form-group label-floating">
                                                     <h4 class="dropdown-label">Subtype</h4>
                                                     <select id="subtype-dropdown" class="selectpicker show-tick" data-style="btn-success" data-width="100%" required style="color: #FFF;">
-                                                        <option value="" data-content="<span style='color: #FFF;'>Select Subtype</span>"></option>
+                                                        <option value="{{ sale.subtype.id }}" data='{"monday": "{{ sale.subtype.monday }}", "tuesday": "{{ sale.subtype.tuesday }}", "wednesday": "{{ sale.subtype.wednesday }}", "thursday": "{{ sale.subtype.thursday }}", "friday": "{{ sale.subtype.friday }}", "saturday": "{{ sale.subtype.saturday }}", "sunday": "{{ sale.subtype.sunday }}", "total": "{{ sale.subtype.total_hours_of_operation }}" }'>{{ sale.subtype.name|title }}</option>
                                                         {% for subtype in subtypes %}
                                                             <option value="{{ subtype.id }}" data='{"monday": "{{ subtype.monday }}", "tuesday": "{{ subtype.tuesday }}", "wednesday": "{{ subtype.wednesday }}", "thursday": "{{ subtype.thursday }}", "friday": "{{ subtype.friday }}", "saturday": "{{ subtype.saturday }}", "sunday": "{{ subtype.sunday }}", "total": "{{ subtype.total_hours_of_operation }}" }'>{{ subtype.name|title }}</option>
                                                         {% endfor %}
@@ -108,7 +108,7 @@
                                                 </div>
                                                 <div class="weekday-input input-group text-center">
                                                     <label>Total</span>
-                                                    <input type="number" min="0" max="8760" class="form-control" name="total" placeholder="0" required="true">
+                                                    <input type="number" min="0" max="8760" class="form-control" name="total" placeholder="0" required="true" value="{{ sale.annual_hours_of_operation }}">
                                                 </div>
                                             </div>
                                         </div>

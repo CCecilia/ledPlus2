@@ -158,6 +158,7 @@ class Sale(models.Model):
 	kwh = models.IntegerField(default=0, verbose_name='kWh')
 	supply_charges = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
 	delivery_charges = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+	supply_rate = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
 	base_rate = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
 	logistics_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
 	marketing_adder = models.DecimalField(max_digits=6, decimal_places=5, default=0.0000)
